@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class SegmentTree:
 
     def __init__(self, capacity):
@@ -8,7 +9,7 @@ class SegmentTree:
         #       parents       leaves
         # { capacity + 1 } { capacity }
         # total size will be capacity + 1 + capacity
-        # tree will store the td error to priortize the replay
+        # tree will store the td error to prioritize the replay
         self.tree = np.zeros(2 * capacity + 1)
         # data will store [state, reward, next_state, done]
         self.data = np.zeros(capacity)
@@ -45,6 +46,11 @@ class SegmentTree:
                 break
 
     def get(self, value):
+        tree_index = self.retrieve(value)
+        data_index = tree_index - self.capacity + 1
+        return tree_index, self.data[data_index]
+
+    def retrieve(self, value):
         starting_tree_index = 0
 
         while True:
