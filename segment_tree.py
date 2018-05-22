@@ -12,7 +12,7 @@ class SegmentTree:
         # tree will store the td error to prioritize the replay
         self.tree = np.zeros(2 * capacity + 1)
         # data will store [state, reward, next_state, done]
-        self.data = np.zeros(capacity)
+        self.data = np.empty(capacity, dtype=np.object)
         self.capacity = capacity
         self.data_index = 0
         self.max_td = 1 # set the max p as 1 first

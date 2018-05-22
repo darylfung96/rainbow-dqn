@@ -28,3 +28,6 @@ class ReplayMemory:
             batch.append(data)
 
         return batch_tree_index, batch
+
+    def update_memory(self):
+        pass
