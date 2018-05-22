@@ -14,8 +14,9 @@ class Agent:
     def __init__(self, max_memory, batch_size, action_size, atom_size, input_size, kernel_size):
         self.z = np.linspace(V_MIN, V_MAX, ATOM_SIZE)
         self.epsilon = EPSILON
+        self.batch_size = batch_size
         self.memory = ReplayMemory(max_memory)
-        self.brain = DistributionalDQN(batch_size=batch_size, action_size=action_size, atom_size=atom_size,
+        self.brain = DistributionalDQN(action_size=action_size, atom_size=atom_size,
                                        input_size=input_size, kernel_size=kernel_size)
 
     def step(self, state_input):
@@ -36,4 +37,12 @@ class Agent:
         max_next_states_q_value = np.sum(next_states_prob, axis=1).max()
         td = ( reward + gamma * max_next_states_q_value ) - states_q_value
         self.memory.add_memory(states, reward, done, next_states, td=td)
+
+    def learn(self):
+        # make sure that there is at least an amount of batch_size before training it
+        if self.memory.count < self.batch_size:
+            return
+
+        tree_indexes, batches = self.memory.get_memory(self.batch_size)
+        pass
 

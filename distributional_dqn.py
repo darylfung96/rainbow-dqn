@@ -5,10 +5,9 @@ import torch.nn.functional as F
 
 class DistributionalDQN(nn.Module):
 
-    def __init__(self, batch_size, action_size, atom_size, input_size, kernel_size: list):
+    def __init__(self, action_size, atom_size, input_size, kernel_size: list):
         super(DistributionalDQN, self).__init__()
 
-        self.batch_size = batch_size
         self.action_size = action_size
         self.atom_size = atom_size
 
@@ -22,7 +21,7 @@ class DistributionalDQN(nn.Module):
         self.batchnorm3 = nn.BatchNorm2d(32)
         self.conv3_output_size = self.conv2_output_size - kernel_size[2] + 0 + 1
 
-        self.fc1 = nn.Linear(self.conv3_output_size ** 2 * self.batch_size * 32, 64)
+        self.fc1 = nn.Linear(self.conv3_output_size ** 2 * 32, 64)
         self.fc2 = nn.Linear(64, 64)
 
         self.policy_distribution_output = []
@@ -35,7 +34,7 @@ class DistributionalDQN(nn.Module):
         conv2_output = F.relu(self.batchnorm2(self.conv2(conv1_output)))
         conv3_output = F.relu(self.batchnorm3(self.conv3(conv2_output)))
 
-        convolution_output = conv3_output.view(self.batch_size, -1)
+        convolution_output = conv3_output.view(1, -1)
         fc1_output = F.relu(self.fc1(convolution_output))
         fc2_output = F.relu(self.fc2(fc1_output))
 

@@ -5,7 +5,6 @@ from torch.autograd import Variable
 import torch
 import numpy as np
 
-from distributional_dqn import DistributionalDQN
 from agent import Agent
 
 MAX_EPISODE = 1000
@@ -30,7 +29,7 @@ def preprocess_image(original_image):
     return variable_input
 
 
-agent = Agent(max_memory=1000, batch_size=1, action_size=env.action_space.n, atom_size=ATOM_SIZE, input_size=IMAGE_SIZE,
+agent = Agent(max_memory=1000, batch_size=32, action_size=env.action_space.n, atom_size=ATOM_SIZE, input_size=IMAGE_SIZE,
               kernel_size=[5, 3, 5])
 
 rendered = env.render(mode='rgb_array')
@@ -41,6 +40,7 @@ for _ in range(MAX_EPISODE):
 
     if done:
         env.reset()
+        agent.learn()
 
     next_rendered = env.render(mode='rgb_array')
     next_variable_input = preprocess_image(next_rendered)
