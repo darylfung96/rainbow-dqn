@@ -56,6 +56,11 @@ class Agent:
         total_loss = None
 
         for batch in batches:
+
+            #fixme fix this None type
+            if batch is None:
+                continue
+
             state_input = batch[0]
             best_action = batch[1]
             next_state_input = batch[4]
@@ -65,7 +70,7 @@ class Agent:
 
             z_prob = self.target_brain(state_input)
 
-            target_z_prob = np.zeros([self.action_size, ATOM_SIZE], dtype=np.)
+            target_z_prob = np.zeros([self.action_size, ATOM_SIZE])
 
             for z_index in range(len(z_prob)):
                 Tz = min(V_MAX, max(V_MIN, batch[2] + gamma * self.z[z_index]))
@@ -75,13 +80,15 @@ class Agent:
 
                 target_z_prob[best_action][m_l] += z_prob[next_best_action][z_index] * (m_u - b)
                 target_z_prob[best_action][m_u] += z_prob[next_best_action][z_index] * (b - m_l)
-                target_z_prob = Variable(torch.from_numpy(target_z_prob))
+            target_z_prob = Variable(torch.from_numpy(target_z_prob))
 
-                # backward propagate
-                #TODO fix error target_z_prob not a longtensor
-                output_prob = self.brain(batch[0])
-                output_prob = Variable(torch.from_numpy(output_prob))
-                loss = self.criterion(output_prob, target_z_prob)
-                total_loss = total_loss + loss
+            # backward propagate
+            #TODO fix error target_z_prob not a longtensor
+            output_prob = self.brain(batch[0])
+            output_prob = Variable(torch.from_numpy(output_prob), requires_grad=True)
+            loss = torch.sum(target_z_prob * torch.log(output_prob))
+            total_loss = loss if total_loss is None else total_loss + loss
+
+        total_loss.backward()
 
 
