@@ -14,8 +14,8 @@ class ReplayMemory:
     def count(self):
         return self._count
 
-    def add_memory(self, state_input, reward, done, next_state_input, td):
-        data = [state_input, reward, done, next_state_input]
+    def add_memory(self, state_input, best_action, reward, done, next_state_input, td):
+        data = [state_input, best_action, reward, done, next_state_input]
 
         self.memory.add(td, data)
 

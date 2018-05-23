@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from replay_memory import ReplayMemory
 from distributional_dqn import DistributionalDQN
@@ -18,6 +19,8 @@ class Agent:
         self.memory = ReplayMemory(max_memory)
         self.brain = DistributionalDQN(action_size=action_size, atom_size=atom_size,
                                        input_size=input_size, kernel_size=kernel_size)
+        self.target_brain = DistributionalDQN(action_size=action_size, atom_size=atom_size,
+                                       input_size=input_size, kernel_size=kernel_size)
 
     def step(self, state_input):
         probs = self.brain(state_input)
@@ -36,7 +39,7 @@ class Agent:
         next_states_prob = np.multiply(self.brain(next_states), self.z)
         max_next_states_q_value = np.sum(next_states_prob, axis=1).max()
         td = ( reward + gamma * max_next_states_q_value ) - states_q_value
-        self.memory.add_memory(states, reward, done, next_states, td=td)
+        self.memory.add_memory(states, best_action, reward, done, next_states, td=td)
 
     def learn(self):
         # make sure that there is at least an amount of batch_size before training it
@@ -44,5 +47,23 @@ class Agent:
             return
 
         tree_indexes, batches = self.memory.get_memory(self.batch_size)
-        pass
+
+        for batch in batches:
+            state_input = batch[0]
+            z_prob = self.target_brain(state_input)
+
+            target_z_prob = np.zeros([ATOM_SIZE])
+
+            for z_index in range(len(z_prob)):
+                Tz = min(V_MAX, max(V_MIN, batch[2] + gamma * self.z[z_index]))
+                b = (Tz - V_MIN) / (self.z[1] - self.z[0])
+                m_l = math.floor(b)
+                m_u = math.ceil(b)
+
+                target_z_prob[m_l] = z_prob[batch[1]][z_index] * (m_u - b)
+                target_z_prob[m_u] = z_prob[batch[1]][z_index] * (b - m_l)
+
+                # backward propagate
+
+
 
