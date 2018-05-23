@@ -2,7 +2,9 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.optim as optim
 from torch.autograd import Variable
+
 
 from replay_memory import ReplayMemory
 from distributional_dqn import DistributionalDQN
@@ -27,6 +29,7 @@ class Agent:
         self.target_brain = DistributionalDQN(action_size=action_size, atom_size=atom_size,
                                        input_size=input_size, kernel_size=kernel_size)
         self.criterion = nn.CrossEntropyLoss()
+        self.optim = optim.Adam(self.brain.parameters())
 
     def step(self, state_input):
         probs = self.brain(state_input)
@@ -90,5 +93,7 @@ class Agent:
             total_loss = loss if total_loss is None else total_loss + loss
 
         total_loss.backward()
+        self.optim.step()
 
+        # load brain to target brain
 
