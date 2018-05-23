@@ -78,6 +78,7 @@ class Agent:
                 target_z_prob = Variable(torch.from_numpy(target_z_prob))
 
                 # backward propagate
+                #TODO fix error target_z_prob not a longtensor
                 output_prob = self.brain(batch[0])
                 output_prob = Variable(torch.from_numpy(output_prob))
                 loss = self.criterion(output_prob, target_z_prob)
