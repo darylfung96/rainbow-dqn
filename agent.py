@@ -1,5 +1,9 @@
 import math
 import numpy as np
+import torch
+import torch.nn as nn
+from torch.autograd import Variable
+
 from replay_memory import ReplayMemory
 from distributional_dqn import DistributionalDQN
 
@@ -14,6 +18,7 @@ class Agent:
 
     def __init__(self, max_memory, batch_size, action_size, atom_size, input_size, kernel_size):
         self.z = np.linspace(V_MIN, V_MAX, ATOM_SIZE)
+        self.action_size = action_size
         self.epsilon = EPSILON
         self.batch_size = batch_size
         self.memory = ReplayMemory(max_memory)
@@ -21,6 +26,7 @@ class Agent:
                                        input_size=input_size, kernel_size=kernel_size)
         self.target_brain = DistributionalDQN(action_size=action_size, atom_size=atom_size,
                                        input_size=input_size, kernel_size=kernel_size)
+        self.criterion = nn.CrossEntropyLoss()
 
     def step(self, state_input):
         probs = self.brain(state_input)
@@ -47,12 +53,19 @@ class Agent:
             return
 
         tree_indexes, batches = self.memory.get_memory(self.batch_size)
+        total_loss = None
 
         for batch in batches:
             state_input = batch[0]
+            best_action = batch[1]
+            next_state_input = batch[4]
+
+            next_q = self.brain(next_state_input)
+            next_best_action = self.select_best_action(next_q)
+
             z_prob = self.target_brain(state_input)
 
-            target_z_prob = np.zeros([ATOM_SIZE])
+            target_z_prob = np.zeros([self.action_size, ATOM_SIZE], dtype=np.)
 
             for z_index in range(len(z_prob)):
                 Tz = min(V_MAX, max(V_MIN, batch[2] + gamma * self.z[z_index]))
@@ -60,10 +73,14 @@ class Agent:
                 m_l = math.floor(b)
                 m_u = math.ceil(b)
 
-                target_z_prob[m_l] = z_prob[batch[1]][z_index] * (m_u - b)
-                target_z_prob[m_u] = z_prob[batch[1]][z_index] * (b - m_l)
+                target_z_prob[best_action][m_l] += z_prob[next_best_action][z_index] * (m_u - b)
+                target_z_prob[best_action][m_u] += z_prob[next_best_action][z_index] * (b - m_l)
+                target_z_prob = Variable(torch.from_numpy(target_z_prob))
 
                 # backward propagate
-
+                output_prob = self.brain(batch[0])
+                output_prob = Variable(torch.from_numpy(output_prob))
+                loss = self.criterion(output_prob, target_z_prob)
+                total_loss = total_loss + loss
 
 
