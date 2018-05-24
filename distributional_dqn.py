@@ -38,9 +38,10 @@ class DistributionalDQN(nn.Module):
         fc1_output = F.relu(self.fc1(convolution_output))
         fc2_output = F.relu(self.fc2(fc1_output))
 
-        policy_output = np.array([]).reshape(0, self.atom_size)
+        #TODO fix this , maybe we can use a variable instead of a list
+        policy_output = []
         for policy_distribution_output in self.policy_distribution_output:
-            policy_output = np.vstack([policy_output, F.softmax(policy_distribution_output(fc2_output)).data.numpy()])
+            policy_output.append(F.softmax(policy_distribution_output(fc2_output)))
 
         return policy_output
 

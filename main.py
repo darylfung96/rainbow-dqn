@@ -39,9 +39,11 @@ for _ in range(MAX_EPISODE):
     observation, reward, done, _ = env.step(best_action)
 
     if done:
+        reward = reward * -100
         env.reset()
         agent.learn()
 
+    print('reward: ', reward)
     next_rendered = env.render(mode='rgb_array')
     next_variable_input = preprocess_image(next_rendered)
     agent.store_states(variable_input, best_action, reward, done, next_variable_input)

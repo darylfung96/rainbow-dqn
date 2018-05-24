@@ -48,7 +48,7 @@ class SegmentTree:
     def get(self, value):
         tree_index = self.retrieve(value)
         data_index = tree_index - self.capacity + 1
-        return tree_index, self.data[data_index]
+        return tree_index, self.tree[tree_index], self.data[data_index]
 
     def retrieve(self, value):
         starting_tree_index = 0

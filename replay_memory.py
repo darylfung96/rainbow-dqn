@@ -26,17 +26,20 @@ class ReplayMemory:
         segment = self.memory.max_td / batch_size
 
         batch_tree_index = []
+        tds = []
         batch = []
 
         for i in range(batch_size):
             a = segment * i
             b = segment * (i + 1)
             segment = random.uniform(a, b)
-            tree_index, data = self.memory.get(segment)
+            tree_index, td, data = self.memory.get(segment)
             batch_tree_index.append(tree_index)
+            tds.append(td)
             batch.append(data)
 
-        return batch_tree_index, batch
+        return batch_tree_index, tds, batch
 
-    def update_memory(self):
-        pass
+    def update_memory(self, tree_indexes, tds):
+        for i in range(len(tree_indexes)):
+            self.memory.update(tree_indexes[i], tds[i])
