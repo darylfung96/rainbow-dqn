@@ -86,7 +86,6 @@ class Agent:
             target_z_prob = Variable(torch.from_numpy(target_z_prob))
 
             # backward propagate
-            #TODO fix error target_z_prob not a longtensor
             output_prob = self.brain(batch[0])
             output_prob = Variable(torch.from_numpy(output_prob), requires_grad=True)
             loss = torch.sum(target_z_prob * torch.log(output_prob))
@@ -96,4 +95,6 @@ class Agent:
         self.optim.step()
 
         # load brain to target brain
+        self.target_brain.load_state_dict(self.brain.state_dict())
 
+        #TODo update the tree
