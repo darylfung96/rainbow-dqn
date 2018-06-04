@@ -16,7 +16,7 @@ BETA = 0.4
 
 
 env = gym.make('CartPole-v0')
-env.reset()
+variable_input = env.reset()
 
 
 def preprocess_image(original_image):
@@ -34,19 +34,27 @@ agent = Agent(max_memory=1000, batch_size=32, action_size=env.action_space.n, at
 
 rendered = env.render(mode='rgb_array')
 for _ in range(MAX_EPISODE):
-    variable_input = preprocess_image(rendered)
+    # variable_input = preprocess_image(rendered)
+    variable_input = np.reshape(variable_input, [1, -1])
+    variable_input = Variable(torch.from_numpy(variable_input).float())
     best_action = agent.step(variable_input)
-    observation, reward, done, _ = env.step(best_action)
+    next_input, reward, done, _ = env.step(best_action)
+    next_input = np.reshape(next_input, [1, -1])
+    next_variable_input = Variable(torch.from_numpy(next_input).float())
 
     if done:
         reward = reward * -100
-        env.reset()
+        next_input = env.reset()
+        next_input = np.reshape(next_input, [1, -1])
+        next_variable_input = Variable(torch.from_numpy(next_input).float())
         agent.learn()
 
     print('reward: ', reward)
-    next_rendered = env.render(mode='rgb_array')
-    next_variable_input = preprocess_image(next_rendered)
+    # next_rendered = env.render(mode='rgb_array')
+    # next_variable_input = preprocess_image(next_rendered)
+    env.render()
     agent.store_states(variable_input, best_action, reward, done, next_variable_input)
+    variable_input = next_input
 
 
 

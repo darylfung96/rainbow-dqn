@@ -49,11 +49,10 @@ class Agent:
 
     def variable_to_numpy(self, probs):
         # probs is a list of softmax prob
-        numpy_probs = np.array([]).reshape(0, self.atom_size)
-        for prob in probs:
-            numpy_probs = np.vstack([numpy_probs, prob.data.numpy()])
+        numpy_probs = probs.data.numpy()
         return numpy_probs
 
+    #TODO find out why td does not get -100 reward
     def calculate_td(self, states, best_action, reward, done, next_states):
         probs = self.brain(states)
         numpy_probs = self.variable_to_numpy(probs)
@@ -98,7 +97,7 @@ class Agent:
             z_prob = self.target_brain(state_input)
             z_prob = self.variable_to_numpy(z_prob)
 
-            target_z_prob = np.zeros([self.action_size, ATOM_SIZE])
+            target_z_prob = np.zeros([self.action_size, ATOM_SIZE], dtype=np.float32)
             if done:
                 Tz = min(V_MAX, max(V_MIN, reward))
                 b = (Tz - V_MIN) / (self.z[1] - self.z[0])
@@ -133,5 +132,5 @@ class Agent:
         # load brain to target brain
         self.target_brain.load_state_dict(self.brain.state_dict())
 
-        #TODO update the tree
+        # TODO update the tree
         self.memory.update_memory(tree_indexes, tds)

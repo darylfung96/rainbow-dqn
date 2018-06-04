@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -21,7 +22,8 @@ class DistributionalDQN(nn.Module):
         self.batchnorm3 = nn.BatchNorm2d(32)
         self.conv3_output_size = self.conv2_output_size - kernel_size[2] + 0 + 1
 
-        self.fc1 = nn.Linear(self.conv3_output_size ** 2 * 32, 64)
+        # self.fc1 = nn.Linear(self.conv3_output_size ** 2 * 32, 64)
+        self.fc1 = nn.Linear(4, 64)
         self.fc2 = nn.Linear(64, 64)
 
         self.policy_distribution_output = []
@@ -30,18 +32,21 @@ class DistributionalDQN(nn.Module):
             self.policy_distribution_output.append(nn.Linear(64, atom_size))
 
     def forward(self, x):
-        conv1_output = F.relu(self.batchnorm1(self.conv1(x)))
-        conv2_output = F.relu(self.batchnorm2(self.conv2(conv1_output)))
-        conv3_output = F.relu(self.batchnorm3(self.conv3(conv2_output)))
-
-        convolution_output = conv3_output.view(1, -1)
-        fc1_output = F.relu(self.fc1(convolution_output))
+        # conv1_output = F.relu(self.batchnorm1(self.conv1(x)))
+        # conv2_output = F.relu(self.batchnorm2(self.conv2(conv1_output)))
+        # conv3_output = F.relu(self.batchnorm3(self.conv3(conv2_output)))
+        #
+        # convolution_output = conv3_output.view(1, -1)
+        # fc1_output = F.relu(self.fc1(convolution_output))
+        fc1_output = F.relu(self.fc1(x))
         fc2_output = F.relu(self.fc2(fc1_output))
 
-        #TODO fix this , maybe we can use a variable instead of a list
         policy_output = []
+        variable_policy_output = None
         for policy_distribution_output in self.policy_distribution_output:
             policy_output.append(F.softmax(policy_distribution_output(fc2_output)))
 
-        return policy_output
+        variable_policy_output = torch.cat([*policy_output])
+
+        return variable_policy_output
 
