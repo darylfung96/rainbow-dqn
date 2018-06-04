@@ -23,7 +23,7 @@ class ReplayMemory:
             self._count += 1
 
     def get_memory(self, batch_size):
-        segment = self.memory.max_td / batch_size
+        segment = self.memory.total / batch_size
 
         batch_tree_index = []
         tds = []

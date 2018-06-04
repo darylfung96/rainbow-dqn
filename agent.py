@@ -132,5 +132,4 @@ class Agent:
         # load brain to target brain
         self.target_brain.load_state_dict(self.brain.state_dict())
 
-        # TODO update the tree
         self.memory.update_memory(tree_indexes, tds)

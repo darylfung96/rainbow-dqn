@@ -15,7 +15,10 @@ class SegmentTree:
         self.data = np.empty(capacity, dtype=np.object)
         self.capacity = capacity
         self.data_index = 0
-        self.max_td = 1  # set the max p as 1 first
+
+    @property
+    def total(self):
+        return self.tree[0]
 
     def add(self, td, data):
         """
@@ -32,8 +35,6 @@ class SegmentTree:
 
         if self.data_index > self.capacity:
             self.data_index = 0
-
-        self.max_td = max(td, self.max_td)
 
     def update(self, tree_index, td):
         change = td - self.tree[tree_index]
