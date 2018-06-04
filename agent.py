@@ -42,7 +42,7 @@ class Agent:
         # z_probs = np.multiply(numpy_probs, self.z)
         # best_action = np.sum(z_probs, axis=1).argmax()
         best_action = np.argmax(numpy_probs, axis=1)
-        return best_action
+        return best_action[0]
 
     def store_states(self, states, best_action, reward, done, next_states):
         td = self.calculate_td(states, best_action, reward, done, next_states)
@@ -59,13 +59,13 @@ class Agent:
         numpy_probs = self.variable_to_numpy(probs)
         # states_prob = np.multiply(numpy_probs, self.z)
         # states_q_value = np.sum(states_prob, axis=1)[best_action]
-        states_q_value = np.sum(numpy_probs, axis=1)[best_action]
+        states_q_value = numpy_probs[0][best_action]
 
         next_probs = self.brain(next_states)
         numpy_next_probs = self.variable_to_numpy(next_probs)
         # next_states_prob = np.multiply(numpy_next_probs, self.z)
         # max_next_states_q_value = np.sum(next_states_prob, axis=1).max()
-        max_next_states_q_value = np.sum(numpy_next_probs, axis=1).max()
+        max_next_states_q_value = np.max(numpy_next_probs, axis=1)[0]
 
         if done:
             td = reward - states_q_value
@@ -99,9 +99,9 @@ class Agent:
             max_next_q = torch.max(next_q)
 
             z_prob = self.target_brain(state_input)
-            z_prob = self.variable_to_numpy(z_prob)
+            # z_prob = self.variable_to_numpy(z_prob)
 
-            q_value = torch.max(z_prob)
+            max_q_value = torch.max(z_prob)
 
             #TODO finish single dqn with per
 
@@ -126,7 +126,8 @@ class Agent:
 
             # backward propagate
             output_prob = self.brain(batch[0])
-            loss = torch.sum(target_z_prob * torch.log(output_prob))
+            # loss = torch.sum(target_z_prob * torch.log(output_prob))
+            loss = (max_q_value - max_next_q)**2
             total_loss = loss if total_loss is None else total_loss + loss
 
             # update td
