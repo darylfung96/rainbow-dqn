@@ -39,8 +39,9 @@ class Agent:
 
     def select_best_action(self, probs):
         numpy_probs = self.variable_to_numpy(probs)
-        z_probs = np.multiply(numpy_probs, self.z)
-        best_action = np.sum(z_probs, axis=1).argmax()
+        # z_probs = np.multiply(numpy_probs, self.z)
+        # best_action = np.sum(z_probs, axis=1).argmax()
+        best_action = np.argmax(numpy_probs, axis=1)
         return best_action
 
     def store_states(self, states, best_action, reward, done, next_states):
@@ -56,13 +57,15 @@ class Agent:
     def calculate_td(self, states, best_action, reward, done, next_states):
         probs = self.brain(states)
         numpy_probs = self.variable_to_numpy(probs)
-        states_prob = np.multiply(numpy_probs, self.z)
-        states_q_value = np.sum(states_prob, axis=1)[best_action]
+        # states_prob = np.multiply(numpy_probs, self.z)
+        # states_q_value = np.sum(states_prob, axis=1)[best_action]
+        states_q_value = np.sum(numpy_probs, axis=1)[best_action]
 
         next_probs = self.brain(next_states)
         numpy_next_probs = self.variable_to_numpy(next_probs)
-        next_states_prob = np.multiply(numpy_next_probs, self.z)
-        max_next_states_q_value = np.sum(next_states_prob, axis=1).max()
+        # next_states_prob = np.multiply(numpy_next_probs, self.z)
+        # max_next_states_q_value = np.sum(next_states_prob, axis=1).max()
+        max_next_states_q_value = np.sum(numpy_next_probs, axis=1).max()
 
         if done:
             td = reward - states_q_value
@@ -78,10 +81,10 @@ class Agent:
 
         tree_indexes, tds, batches = self.memory.get_memory(self.batch_size)
         total_loss = None
-
+        self.optim.zero_grad()
         for index, batch in enumerate(batches):
 
-            #fixme fix this None type
+            # fixme fix this None type
             if batch is None:
                 continue
 
@@ -92,29 +95,34 @@ class Agent:
             next_state_input = batch[4]
 
             next_q = self.brain(next_state_input)
-            next_best_action = self.select_best_action(next_q)
+            # next_best_action = self.select_best_action(next_q)
+            max_next_q = torch.max(next_q)
 
             z_prob = self.target_brain(state_input)
             z_prob = self.variable_to_numpy(z_prob)
 
-            target_z_prob = np.zeros([self.action_size, ATOM_SIZE], dtype=np.float32)
-            if done:
-                Tz = min(V_MAX, max(V_MIN, reward))
-                b = (Tz - V_MIN) / (self.z[1] - self.z[0])
-                m_l = math.floor(b)
-                m_u = math.ceil(b)
-                target_z_prob[best_action][m_l] += (m_u - b)
-                target_z_prob[best_action][m_u] += (b - m_l)
-            else:
-                for z_index in range(len(z_prob)):
-                    Tz = min(V_MAX, max(V_MIN, reward + gamma * self.z[z_index]))
-                    b = (Tz - V_MIN) / (self.z[1] - self.z[0])
-                    m_l = math.floor(b)
-                    m_u = math.ceil(b)
+            q_value = torch.max(z_prob)
 
-                    target_z_prob[best_action][m_l] += z_prob[next_best_action][z_index] * (m_u - b)
-                    target_z_prob[best_action][m_u] += z_prob[next_best_action][z_index] * (b - m_l)
-            target_z_prob = Variable(torch.from_numpy(target_z_prob))
+            #TODO finish single dqn with per
+
+            # target_z_prob = np.zeros([self.action_size, ATOM_SIZE], dtype=np.float32)
+            # if done:
+            #     Tz = min(V_MAX, max(V_MIN, reward))
+            #     b = (Tz - V_MIN) / (self.z[1] - self.z[0])
+            #     m_l = math.floor(b)
+            #     m_u = math.ceil(b)
+            #     target_z_prob[best_action][m_l] += (m_u - b)
+            #     target_z_prob[best_action][m_u] += (b - m_l)
+            # else:
+            #     for z_index in range(len(z_prob)):
+            #         Tz = min(V_MAX, max(V_MIN, reward + gamma * self.z[z_index]))
+            #         b = (Tz - V_MIN) / (self.z[1] - self.z[0])
+            #         m_l = math.floor(b)
+            #         m_u = math.ceil(b)
+            #
+            #         target_z_prob[best_action][m_l] += z_prob[next_best_action][z_index] * (m_u - b)
+            #         target_z_prob[best_action][m_u] += z_prob[next_best_action][z_index] * (b - m_l)
+            # target_z_prob = Variable(torch.from_numpy(target_z_prob))
 
             # backward propagate
             output_prob = self.brain(batch[0])
@@ -125,7 +133,6 @@ class Agent:
             td = self.calculate_td(state_input, best_action, reward, done, next_state_input)
             tds[index] = td
 
-        self.optim.zero_grad()
         total_loss.backward()
         self.optim.step()
 
