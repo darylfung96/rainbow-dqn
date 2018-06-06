@@ -10,7 +10,7 @@ class SegmentTree:
         # { capacity + 1 } { capacity }
         # total size will be capacity + 1 + capacity
         # tree will store the td error to prioritize the replay
-        self.tree = np.zeros(2 * capacity + 1)
+        self.tree = np.zeros(2 * capacity - 1)
         # data will store [state, reward, next_state, done]
         self.data = np.empty(capacity, dtype=np.object)
         self.capacity = capacity
@@ -27,13 +27,13 @@ class SegmentTree:
         :param data: [state, reward, next_state, done]
         :return: None
         """
-        tree_index = self.data_index + self.capacity + 1
+        tree_index = self.data_index + self.capacity - 1
         self.data[self.data_index] = data
 
         self.update(tree_index, td)
         self.data_index += 1
 
-        if self.data_index > self.capacity:
+        if self.data_index >= self.capacity:
             self.data_index = 0
 
     def update(self, tree_index, td):
@@ -66,3 +66,4 @@ class SegmentTree:
                 starting_tree_index = l_index
             else:
                 starting_tree_index = r_index
+                value = value - self.tree[l_index]

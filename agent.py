@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 from torch.autograd import Variable
 
 
@@ -29,8 +30,8 @@ class Agent:
                                        input_size=input_size, kernel_size=kernel_size)
         self.target_brain = DistributionalDQN(action_size=action_size, atom_size=atom_size,
                                        input_size=input_size, kernel_size=kernel_size)
-        self.criterion = nn.CrossEntropyLoss()
-        self.optim = optim.Adam(self.brain.parameters())
+        self.target_brain.load_state_dict(self.brain.state_dict())
+        self.optim = optim.Adam(self.brain.parameters(), lr=0.01)
 
     def step(self, state_input):
         probs = self.brain(state_input)
@@ -72,7 +73,7 @@ class Agent:
         else:
             td = (reward + gamma * max_next_states_q_value) - states_q_value
 
-        return td
+        return abs(td)
 
     def learn(self):
         # make sure that there is at least an amount of batch_size before training it
@@ -81,7 +82,6 @@ class Agent:
 
         tree_indexes, tds, batches = self.memory.get_memory(self.batch_size)
         total_loss = None
-        self.optim.zero_grad()
         for index, batch in enumerate(batches):
 
             # fixme fix this None type
@@ -94,14 +94,16 @@ class Agent:
             done = batch[3]
             next_state_input = batch[4]
 
-            next_q = self.brain(next_state_input)
+            current_q = self.brain(state_input)
             # next_best_action = self.select_best_action(next_q)
-            max_next_q = torch.max(next_q)
+            max_current_q = torch.max(current_q)
 
-            z_prob = self.target_brain(state_input)
+            best_next_action = self.select_best_action(self.brain(next_state_input))
+            next_q = self.target_brain(next_state_input)
             # z_prob = self.variable_to_numpy(z_prob)
 
-            max_q_value = torch.max(z_prob)
+            target = reward + (1 - done) * gamma * next_q.data[0][best_next_action]
+            target = Variable(torch.FloatTensor([target]))
 
             #TODO finish single dqn with per
 
@@ -127,13 +129,15 @@ class Agent:
             # backward propagate
             output_prob = self.brain(batch[0])
             # loss = torch.sum(target_z_prob * torch.log(output_prob))
-            loss = (max_q_value - max_next_q)**2
+
+            loss = F.mse_loss(max_current_q, target)
             total_loss = loss if total_loss is None else total_loss + loss
 
             # update td
             td = self.calculate_td(state_input, best_action, reward, done, next_state_input)
             tds[index] = td
 
+        self.optim.zero_grad()
         total_loss.backward()
         self.optim.step()
 

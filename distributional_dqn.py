@@ -23,11 +23,11 @@ class DistributionalDQN(nn.Module):
         self.conv3_output_size = self.conv2_output_size - kernel_size[2] + 0 + 1
 
         # self.fc1 = nn.Linear(self.conv3_output_size ** 2 * 32, 64)
-        self.fc1 = nn.Linear(4, 64)
-        self.fc2 = nn.Linear(64, 64)
+        self.fc1 = nn.Linear(4, 32)
+        self.fc2 = nn.Linear(32, 32)
 
         ###
-        self.fc3 = nn.Linear(64, action_size)
+        self.fc3 = nn.Linear(32, action_size)
 
         # self.policy_distribution_output = []
         #
@@ -43,7 +43,8 @@ class DistributionalDQN(nn.Module):
         # fc1_output = F.relu(self.fc1(convolution_output))
         fc1_output = F.relu(self.fc1(x))
         fc2_output = F.relu(self.fc2(fc1_output))
-        fc3_output = F.softmax(self.fc3(fc2_output))
+        fc3_output = self.fc3(fc2_output)
+        # fc3_output = F.softmax(self.fc3(fc2_output))
         # policy_output = []
         # variable_policy_output = None
         # for policy_distribution_output in self.policy_distribution_output:
