@@ -7,8 +7,9 @@ class SegmentTree:
 
         # the tree is build accordingly:
         #       parents       leaves
-        # { capacity + 1 } { capacity }
-        # total size will be capacity + 1 + capacity
+        # { capacity - 1 } { capacity }
+        # total size will be capacity - 1 + capacity
+        # because parent is always 1 value lesser than the total capacity
         # tree will store the td error to prioritize the replay
         self.tree = np.zeros(2 * capacity - 1)
         # data will store [state, reward, next_state, done]
