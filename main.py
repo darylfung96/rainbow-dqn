@@ -39,7 +39,7 @@ for current_episode in range(MAX_EPISODE):
     variable_input = Variable(torch.from_numpy(variable_input).float())
     best_action = agent.step(variable_input)
     next_input, reward, done, _ = env.step(best_action)
-    reward = reward if not done else -100
+    # reward = reward if not done else -100
     total_reward += reward
     next_input = np.reshape(next_input, [1, -1])
     next_variable_input = Variable(torch.from_numpy(next_input).float())

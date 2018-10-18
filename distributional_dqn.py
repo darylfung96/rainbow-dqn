@@ -44,7 +44,7 @@ class DistributionalDQN(nn.Module):
         fc1_output = F.relu(self.fc1(x))
         fc2_output = F.relu(self.fc2(fc1_output))
         fc3_output = self.fc3(fc2_output)
-        # fc3_output = F.softmax(self.fc3(fc2_output))
+        # fc3_output = F.softmax(fc3_output)
         # policy_output = []
         # variable_policy_output = None
         # for policy_distribution_output in self.policy_distribution_output:

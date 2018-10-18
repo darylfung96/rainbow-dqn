@@ -31,7 +31,7 @@ class Agent:
         self.target_brain = DistributionalDQN(action_size=action_size, atom_size=atom_size,
                                        input_size=input_size, kernel_size=kernel_size)
         self.target_brain.load_state_dict(self.brain.state_dict())
-        self.optim = optim.Adam(self.brain.parameters(), lr=0.01)
+        self.optim = optim.Adam(self.brain.parameters(), lr=0.001)
 
     def step(self, state_input):
         probs = self.brain(state_input)
@@ -131,7 +131,7 @@ class Agent:
             # loss = torch.sum(target_z_prob * torch.log(output_prob))
 
             loss = F.mse_loss(max_current_q, target)
-            total_loss = loss if total_loss is None else total_loss + loss
+            total_loss = -loss if total_loss is None else total_loss - loss
 
             # update td
             td = self.calculate_td(state_input, best_action, reward, done, next_state_input)
