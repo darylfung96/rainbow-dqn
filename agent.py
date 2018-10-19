@@ -40,10 +40,10 @@ class Agent:
 
     def select_best_action(self, probs):
         numpy_probs = self.variable_to_numpy(probs)
-        # z_probs = np.multiply(numpy_probs, self.z)
-        # best_action = np.sum(z_probs, axis=1).argmax()
-        best_action = np.argmax(numpy_probs, axis=1)
-        return best_action[0]
+        z_probs = np.multiply(numpy_probs, self.z)
+        best_action = np.sum(z_probs, axis=1).argmax()
+        # best_action = np.argmax(numpy_probs, axis=1)
+        return best_action
 
     def store_states(self, states, best_action, reward, done, next_states):
         td = self.calculate_td(states, best_action, reward, done, next_states)
@@ -95,43 +95,42 @@ class Agent:
             next_state_input = batch[4]
 
             current_q = self.brain(state_input)
-            # next_best_action = self.select_best_action(next_q)
-            max_current_q = torch.max(current_q)
+            next_best_action = self.step(next_state_input)
+            # max_current_q = torch.max(current_q)
 
-            best_next_action = self.select_best_action(self.brain(next_state_input))
-            next_q = self.target_brain(next_state_input)
-            # z_prob = self.variable_to_numpy(z_prob)
+            next_z_prob = self.target_brain(next_state_input)
+            next_z_prob = self.variable_to_numpy(next_z_prob)
 
-            target = reward + (1 - done) * gamma * next_q.data[0][best_next_action]
-            target = Variable(torch.FloatTensor([target]))
+            # target = reward + (1 - done) * gamma * next_z_prob.data[0][next_best_action]
+            # target = Variable(torch.FloatTensor([target]))
 
             #TODO finish single dqn with per
 
-            # target_z_prob = np.zeros([self.action_size, ATOM_SIZE], dtype=np.float32)
-            # if done:
-            #     Tz = min(V_MAX, max(V_MIN, reward))
-            #     b = (Tz - V_MIN) / (self.z[1] - self.z[0])
-            #     m_l = math.floor(b)
-            #     m_u = math.ceil(b)
-            #     target_z_prob[best_action][m_l] += (m_u - b)
-            #     target_z_prob[best_action][m_u] += (b - m_l)
-            # else:
-            #     for z_index in range(len(z_prob)):
-            #         Tz = min(V_MAX, max(V_MIN, reward + gamma * self.z[z_index]))
-            #         b = (Tz - V_MIN) / (self.z[1] - self.z[0])
-            #         m_l = math.floor(b)
-            #         m_u = math.ceil(b)
-            #
-            #         target_z_prob[best_action][m_l] += z_prob[next_best_action][z_index] * (m_u - b)
-            #         target_z_prob[best_action][m_u] += z_prob[next_best_action][z_index] * (b - m_l)
-            # target_z_prob = Variable(torch.from_numpy(target_z_prob))
+            target_z_prob = np.zeros([self.action_size, ATOM_SIZE], dtype=np.float32)
+            if done:
+                Tz = min(V_MAX, max(V_MIN, reward))
+                b = (Tz - V_MIN) / (self.z[1] - self.z[0])
+                m_l = math.floor(b)
+                m_u = math.ceil(b)
+                target_z_prob[best_action][m_l] += (m_u - b)
+                target_z_prob[best_action][m_u] += (b - m_l)
+            else:
+                for z_index in range(len(next_z_prob)):
+                    Tz = min(V_MAX, max(V_MIN, reward + gamma * self.z[z_index]))
+                    b = (Tz - V_MIN) / (self.z[1] - self.z[0])
+                    m_l = math.floor(b)
+                    m_u = math.ceil(b)
+
+                    target_z_prob[best_action][m_l] += next_z_prob[next_best_action][z_index] * (m_u - b)
+                    target_z_prob[best_action][m_u] += next_z_prob[next_best_action][z_index] * (b - m_l)
+            target_z_prob = Variable(torch.from_numpy(target_z_prob))
 
             # backward propagate
             output_prob = self.brain(batch[0])
-            # loss = torch.sum(target_z_prob * torch.log(output_prob))
+            loss = -torch.sum(target_z_prob * torch.log(output_prob))
 
-            loss = F.mse_loss(max_current_q, target)
-            total_loss = -loss if total_loss is None else total_loss - loss
+            # loss = F.mse_loss(max_current_q, target)
+            total_loss = loss if total_loss is None else total_loss + loss
 
             # update td
             td = self.calculate_td(state_input, best_action, reward, done, next_state_input)
