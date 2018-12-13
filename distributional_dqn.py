@@ -24,7 +24,8 @@ class DistributionalDQN(nn.Module):
         self.fc2 = nn.Linear(32, 32)
 
         ###
-        self.fc3 = nn.Linear(32, self.action_size * self.atom_size)
+        self.fc_value = nn.Linear(32, self.atom_size)
+        self.fc_advantage = nn.Linear(32, self.action_size * self.atom_size)
 
     def forward(self, x):
         # conv1_output = F.relu(self.batchnorm1(self.conv1(x)))
@@ -35,7 +36,11 @@ class DistributionalDQN(nn.Module):
         # fc1_output = F.relu(self.fc1(convolution_output))
         fc1_output = F.relu(self.fc1(x))
         fc2_output = F.relu(self.fc2(fc1_output))
-        fc3_output = self.fc3(fc2_output)
-        output = F.softmax(fc3_output.view(-1, self.action_size, self.atom_size), dim=-1)[0]
+
+        value = self.fc_value(fc2_output)
+        advantage = self.fc_advantage(fc2_output).view(-1, self.action_size, self.atom_size)
+
+        output = value + advantage - advantage.mean(1, keepdim=True)
+        output = F.softmax(output, dim=-1)[0]
 
         return output
