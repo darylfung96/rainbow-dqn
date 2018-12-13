@@ -126,8 +126,8 @@ class Agent:
             target_z_prob = Variable(torch.from_numpy(target_z_prob))
 
             # backward propagate
-            output_prob = self.brain(batch[0])
-            loss = -torch.sum(target_z_prob * torch.log(output_prob))
+            output_prob = self.brain(state_input)[0]
+            loss = -torch.sum(target_z_prob * torch.log(output_prob + 1e-8))
 
             # loss = F.mse_loss(max_current_q, target)
             total_loss = loss if total_loss is None else total_loss + loss
