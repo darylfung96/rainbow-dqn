@@ -1,13 +1,11 @@
-import numpy as np
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
-class DistributionalDQN(nn.Module):
+class RainbowDQN(nn.Module):
 
     def __init__(self, action_size, atom_size, input_size, kernel_size: list):
-        super(DistributionalDQN, self).__init__()
+        super(RainbowDQN, self).__init__()
 
         self.action_size = action_size
         self.atom_size = atom_size

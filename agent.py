@@ -1,14 +1,12 @@
 import math
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
 from torch.autograd import Variable
 
 
 from replay_memory import ReplayMemory
-from distributional_dqn import DistributionalDQN
+from model import RainbowDQN
 
 EPSILON = 0.01
 V_MIN = -1000
@@ -26,9 +24,9 @@ class Agent:
         self.batch_size = batch_size
         self.atom_size = atom_size
         self.memory = ReplayMemory(max_memory)
-        self.brain = DistributionalDQN(action_size=action_size, atom_size=atom_size,
-                                       input_size=input_size, kernel_size=kernel_size)
-        self.target_brain = DistributionalDQN(action_size=action_size, atom_size=atom_size,
+        self.brain = RainbowDQN(action_size=action_size, atom_size=atom_size,
+                                input_size=input_size, kernel_size=kernel_size)
+        self.target_brain = RainbowDQN(action_size=action_size, atom_size=atom_size,
                                        input_size=input_size, kernel_size=kernel_size)
         self.target_brain.load_state_dict(self.brain.state_dict())
         self.optim = optim.Adam(self.brain.parameters(), lr=0.001)

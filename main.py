@@ -1,6 +1,5 @@
 import gym
 from scipy.misc import imresize
-from PIL import Image
 from torch.autograd import Variable
 import torch
 import numpy as np
